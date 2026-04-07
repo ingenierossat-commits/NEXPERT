@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NEXPERT</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#F47C20">
+  <link rel="apple-touch-icon" href="icon512.png">
+  <link rel="icon" href="icon512.png">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #F47C20; --orange-light: #FF9A45;
+      --black: #0D0D0D; --black-2: #1A1A1A; --black-3: #252525; --black-4: #333333;
+      --white: #FFFFFF; --white-soft: #F5F5F5; --white-dim: #CCCCCC;
+      --border: rgba(244,124,32,0.25);
+    }
+    body { font-family: 'Rajdhani', sans-serif; background: var(--black); color: var(--white); min-height: 100vh; overflow-x: hidden; }
+    header { background: var(--black-2); border-bottom: 2px solid var(--orange); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 72px; position: sticky; top: 0; z-index: 100; }
+    .logo { cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .breadcrumb { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; font-weight: 600; color: var(--white-dim); }
+    .bc-item { cursor: pointer; transition: color 0.2s; }
+    .bc-item:hover, .bc-item.active { color: var(--orange); }
+    .bc-sep { color: var(--black-4); }
+    .header-right { display: flex; gap: 0.8rem; align-items: center; }
+    main { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    /* HOME */
+    .home-intro { text-align: center; padding: 2rem 0 2rem; }
+    .home-intro h2 { font-size: 0.95rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--orange); margin-bottom: 0.8rem; font-weight: 600; }
+    .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 700px; margin: 0 auto; }
+    .cat-card { background: var(--black-2); border: 2px solid var(--border); border-radius: 4px; padding: 4rem 2rem; text-align: center; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .cat-card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: var(--orange); transform: scaleX(0); transition: transform 0.3s; }
+    .cat-card:hover { border-color: var(--orange); background: var(--black-3); transform: translateY(-3px); }
+    .cat-card:hover::after { transform: scaleX(1); }
+    .cat-name { font-family: 'Syncopate', sans-serif; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--white); }
+    /* PDF GLOBAL */
+    .pdf-ia-card { background: var(--black-2); border: 2px solid var(--border); border-radius: 4px; padding: 4rem 2rem; text-align: center; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; }
+    .pdf-ia-card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: var(--orange); transform: scaleX(0); transition: transform 0.3s; }
+    .pdf-ia-card:hover { border-color: var(--orange); background: var(--black-3); transform: translateY(-3px); }
+    .pdf-ia-card:hover::after { transform: scaleX(1); }
+    .pdf-ia-name { font-family: 'Syncopate', sans-serif; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--white); }
+    .pdf-ia-upload-wrap { display: none; flex-direction: column; align-items: center; gap: 0.8rem; }
+    .pdf-ia-upload-wrap.show { display: flex; }
+    .btn-upload-pdf { background: transparent; border: 2px dashed rgba(244,124,32,0.4); border-radius: 4px; color: var(--orange); font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.6rem 1.2rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .btn-upload-pdf:hover { border-color: var(--orange); background: rgba(244,124,32,0.05); }
+    .btn-upload-pdf:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pdf-upload-progress { font-size: 0.75rem; color: var(--orange); }
+    /* PÁGINAS */
+    .page-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 1rem; }
+    .page-hdr h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    .page-hdr h1 span { color: var(--orange); }
+    .page-sub { font-size: 0.75rem; color: var(--white-dim); margin-top: 0.3rem; font-weight: 500; }
+    .back-btn { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--white-dim); cursor: pointer; transition: color 0.2s; background: none; border: none; margin-bottom: 1.5rem; padding: 0; font-family: 'Rajdhani', sans-serif; }
+    .back-btn:hover { color: var(--orange); }
+    .search-wrap { margin-bottom: 2rem; }
+    .search-input { width: 100%; padding: 0.7rem 1rem; background: var(--white); border: 1.5px solid var(--border); border-radius: 3px; color: var(--black); font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 500; outline: none; }
+    .search-input::placeholder { color: #aaa; }
+    .search-input:focus { border-color: var(--orange); }
+    /* MARCAS */
+    .brands-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+    .brand-card { background: var(--black-2); border: 1.5px solid var(--border); border-radius: 4px; padding: 2rem 1rem; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; min-height: 110px; gap: 0.8rem; }
+    .brand-card:hover { border-color: var(--orange); background: var(--black-3); }
+    .brand-name { font-family: 'Syncopate', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--white); line-height: 1.6; }
+    .brand-options { display: none; flex-direction: column; gap: 0.5rem; width: 100%; }
+    .brand-card.selected { border-color: var(--orange); background: var(--black-3); }
+    .brand-card.selected .brand-options { display: flex; }
+    .brand-opt-btn { width: 100%; padding: 0.45rem 0.5rem; border-radius: 3px; font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border: none; transition: all 0.15s; }
+    .brand-opt-enter  { background: var(--orange); color: var(--black); }
+    .brand-opt-enter:hover  { background: var(--orange-light); }
+    .brand-opt-edit   { background: transparent; color: var(--white-dim); border: 1px solid var(--border); }
+    .brand-opt-edit:hover   { color: var(--white); border-color: var(--white-dim); }
+    .brand-opt-delete { background: transparent; color: #e05050; border: 1px solid rgba(224,80,80,0.3); }
+    .brand-opt-delete:hover { background: rgba(224,80,80,0.1); border-color: #e05050; }
+    /* MODELOS */
+    .models-list { display: flex; flex-direction: column; gap: 0.8rem; }
+    .model-row { background: var(--black-2); border: 1.5px solid var(--border); border-radius: 4px; overflow: hidden; }
+    .model-hdr { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.2rem; cursor: pointer; transition: background 0.2s; user-select: none; }
+    .model-hdr:hover { background: var(--black-3); }
+    .model-hdr-left { display: flex; align-items: center; gap: 0.8rem; }
+    .model-chevron { font-size: 0.65rem; color: var(--orange); transition: transform 0.2s; }
+    .model-row.open .model-chevron { transform: rotate(90deg); }
+    .model-name { font-size: 1rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    .pdf-badge { font-size: 0.7rem; color: var(--orange); font-weight: 600; background: rgba(244,124,32,0.12); padding: 0.2rem 0.6rem; border-radius: 2px; }
+    .model-acts { display: flex; gap: 0.4rem; align-items: center; }
+    .model-body { display: none; padding: 0 1.2rem 1.2rem; border-top: 1px solid var(--border); }
+    .model-row.open .model-body { display: block; }
+    .pdf-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem; }
+    .pdf-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 1rem; background: var(--black-3); border: 1px solid rgba(244,124,32,0.15); border-radius: 3px; transition: all 0.2s; }
+    .pdf-item:hover { border-color: var(--orange); }
+    .pdf-icon { font-size: 1.1rem; color: var(--orange); flex-shrink: 0; }
+    .pdf-name { flex: 1; font-size: 0.88rem; font-weight: 600; color: var(--white-soft); cursor: pointer; transition: color 0.2s; }
+    .pdf-name:hover { color: var(--orange); }
+    .pdf-acts { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .add-pdf-btn { margin-top: 1rem; width: 100%; padding: 0.9rem; background: transparent; border: 2px dashed rgba(244,124,32,0.3); border-radius: 4px; color: var(--orange); font-family: 'Rajdhani', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+    .add-pdf-btn:hover { border-color: var(--orange); background: rgba(244,124,32,0.05); }
+    /* CHAT */
+    .chat-header-info { background: var(--black-3); border: 1px solid var(--border); border-radius: 4px; padding: 0.8rem 1.2rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+    .chat-model-label { font-family: 'Syncopate', sans-serif; font-size: 0.75rem; font-weight: 700; color: var(--orange); text-transform: uppercase; letter-spacing: 0.1em; }
+    .chat-docs-label { font-size: 0.75rem; color: var(--white-dim); font-weight: 500; }
+    .chat-messages { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.2rem; min-height: 200px; max-height: 55vh; overflow-y: auto; padding-right: 0.3rem; }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-track { background: var(--black-3); }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 2px; }
+    .chat-msg { display: flex; flex-direction: column; gap: 0.3rem; max-width: 88%; }
+    .chat-msg.user { align-self: flex-end; align-items: flex-end; }
+    .chat-msg.assistant { align-self: flex-start; align-items: flex-start; }
+    .chat-bubble { padding: 0.8rem 1rem; border-radius: 4px; font-size: 0.9rem; font-weight: 500; line-height: 1.6; white-space: pre-wrap; }
+    .chat-msg.user .chat-bubble { background: var(--orange); color: var(--black); border-radius: 4px 4px 0 4px; }
+    .chat-msg.assistant .chat-bubble { background: var(--black-3); border: 1px solid var(--border); color: var(--white-soft); border-radius: 4px 4px 4px 0; }
+    .chat-sender { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--white-dim); }
+    .chat-input-row { display: flex; gap: 0.6rem; align-items: flex-end; }
+    .chat-input { flex: 1; padding: 0.8rem 1rem; background: var(--black-3); border: 1.5px solid var(--border); border-radius: 4px; color: var(--white); font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 500; outline: none; resize: none; min-height: 48px; max-height: 120px; line-height: 1.4; }
+    .chat-input:focus { border-color: var(--orange); }
+    .chat-send-btn { padding: 0.8rem 1.2rem; background: var(--orange); border: none; border-radius: 4px; color: var(--black); font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; flex-shrink: 0; height: 48px; }
+    .chat-send-btn:hover { background: var(--orange-light); }
+    .chat-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .chat-mic-btn { width: 48px; height: 48px; flex-shrink: 0; background: var(--black-3); border: 1.5px solid var(--border); border-radius: 4px; font-size: 1.2rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+    .chat-mic-btn:hover { border-color: var(--orange); background: rgba(244,124,32,0.1); }
+    .chat-mic-btn.recording { border-color: #e05050; background: rgba(224,80,80,0.15); animation: micPulse 1s infinite; }
+    @keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(224,80,80,0.4); } 50% { box-shadow: 0 0 0 6px rgba(224,80,80,0); } }
+    .chat-empty { text-align: center; padding: 2rem; }
+    .chat-empty p { font-size: 0.85rem; font-weight: 500; line-height: 1.8; color: var(--white-dim); margin-top: 0.5rem; }
+    .typing-dot { display: inline-block; width: 6px; height: 6px; background: var(--orange); border-radius: 50%; margin: 0 2px; animation: typingPulse 1.2s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingPulse { 0%,80%,100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+    /* BOTONES */
+    .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.2rem; border-radius: 3px; font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border: none; transition: all 0.2s; white-space: nowrap; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: var(--orange); color: var(--black); }
+    .btn-primary:hover { background: var(--orange-light); }
+    .btn-ghost { background: transparent; color: var(--white-dim); border: 1px solid var(--border); padding: 0.4rem 0.7rem; font-size: 0.72rem; }
+    .btn-ghost:hover { color: var(--white); border-color: var(--white-dim); }
+    .btn-danger { background: transparent; color: #e05050; border: 1px solid rgba(224,80,80,0.3); padding: 0.4rem 0.7rem; font-size: 0.72rem; }
+    .btn-danger:hover { background: rgba(224,80,80,0.1); border-color: #e05050; }
+    .btn-ai-header { background: var(--orange); color: var(--black); border: none; padding: 0.5rem 1rem; border-radius: 3px; font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+    .btn-ai-header:hover { background: var(--orange-light); }
+    .btn-row { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center; margin-top: 1.2rem; }
+    /* MODALES */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 500; display: none; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: var(--black-2); border: 1.5px solid var(--orange); border-radius: 4px; padding: 2rem; width: 100%; max-width: 480px; box-shadow: 0 0 40px rgba(244,124,32,0.2); }
+    .modal-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .modal-hdr h3 { font-size: 1rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange); }
+    .btn-close { background: none; border: none; color: var(--white-dim); font-size: 1.2rem; cursor: pointer; }
+    .btn-close:hover { color: var(--white); }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
+    label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--white-dim); }
+    input[type="text"] { padding: 0.7rem 1rem; background: var(--black-3); border: 1.5px solid var(--border); border-radius: 3px; color: var(--white); font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 600; outline: none; width: 100%; }
+    input[type="text"]:focus { border-color: var(--orange); }
+    /* EMPTY */
+    .empty { text-align: center; padding: 4rem 2rem; color: var(--black-4); }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+    .empty h3 { font-size: 1rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; }
+    /* TOAST */
+    .toast { position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.5rem; border-radius: 3px; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; z-index: 999; transform: translateY(80px); opacity: 0; transition: all 0.3s; pointer-events: none; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.ok { background: var(--orange); color: var(--black); }
+    .toast.err { background: #e05050; color: white; }
+    /* SPINNER */
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(244,124,32,0.3); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 600px) {
+      header { padding: 0 1rem; height: 60px; }
+      .breadcrumb { display: none; }
+      main { padding: 1.2rem 1rem; }
+      .home-grid { grid-template-columns: 1fr; }
+      .brands-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo" id="logo-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 650 512" width="96" height="76">
+      <defs><linearGradient id="icoOrange" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FF9A45"/><stop offset="100%" style="stop-color:#F47C20"/></linearGradient></defs>
+      <text x="46" y="310" font-size="112" fill="#FFFFFF" font-family="'Arial Black',Arial,sans-serif" font-weight="900" text-anchor="start" letter-spacing="-3">NEX</text>
+      <text x="255" y="310" font-size="112" fill="url(#icoOrange)" font-family="'Arial Black',Arial,sans-serif" font-weight="900" text-anchor="start" letter-spacing="-3">PERT</text>
+    </svg>
+  </div>
+  <div class="breadcrumb" id="bc"></div>
+  <div class="header-right">
+    <button class="btn btn-ghost" id="btn-inicio">Inicio</button>
+    <button class="btn btn-ai-header" id="btn-ia-header">🤖 IA</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- HOME -->
+  <div class="screen active" id="s-home">
+    <div class="home-intro">
+      <h2>Biblioteca Técnica de Manuales</h2>
+    </div>
+    <div class="home-grid">
+      <div class="cat-card" id="cat-puertas"><div class="cat-name">Puertas Automáticas</div></div>
+      <div class="cat-card" id="cat-automatismos"><div class="cat-name">Automatismos</div></div>
+    </div>
+    <div class="home-grid" style="margin-top:1.5rem; max-width:700px; margin-left:auto; margin-right:auto;">
+      <div class="pdf-ia-card" id="pdf-ia-card" style="grid-column:1/-1">
+        <div class="pdf-ia-name" id="pdf-ia-label">Manual IA</div>
+        <div class="pdf-ia-upload-wrap" id="pdf-ia-upload-wrap">
+          <input type="file" id="inp-pdf-global" accept=".pdf" style="display:none">
+          <button class="btn-upload-pdf" id="btn-subir-pdf-global">⬆ Subir PDF</button>
+          <div class="pdf-upload-progress" id="pdf-global-progress" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARCAS -->
+  <div class="screen" id="s-marcas">
+    <button class="back-btn" id="back-marcas">← Volver al inicio</button>
+    <div class="page-hdr">
+      <div>
+        <h1><span id="cat-title"></span></h1>
+        <div class="page-sub" id="cat-sub"></div>
+      </div>
+      <button class="btn btn-primary" id="btn-add-marca">+ Añadir marca</button>
+    </div>
+    <div class="search-wrap">
+      <input type="text" class="search-input" id="searchMarca" placeholder="Buscar marca...">
+    </div>
+    <div class="brands-grid" id="brandsGrid"></div>
+  </div>
+
+  <!-- MODELOS -->
+  <div class="screen" id="s-modelos">
+    <button class="back-btn" id="back-modelos">← Volver a marcas</button>
+    <div class="page-hdr">
+      <div>
+        <h1><span id="brand-title"></span></h1>
+        <div class="page-sub" id="brand-sub"></div>
+      </div>
+      <button class="btn btn-primary" id="btn-add-modelo">+ Añadir modelo</button>
+    </div>
+    <div class="models-list" id="modelsList"></div>
+  </div>
+
+  <!-- CHAT IA -->
+  <div class="screen" id="s-chat">
+    <button class="back-btn" id="chat-back-btn">← Volver</button>
+    <div class="chat-header-info">
+      <span class="chat-model-label" id="chat-model-name">Consulta IA</span>
+      <span class="chat-docs-label" id="chat-docs-info"></span>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ej: ¿Qué significa el error E05 en FAAC B614?"></textarea>
+      <button class="chat-mic-btn" id="chatMicBtn" title="Voz">🎤</button>
+      <button class="chat-send-btn" id="chatSendBtn">➤</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL MARCA -->
+<div class="modal-backdrop" id="m-marca">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="m-marca-titulo">Nueva marca</h3><button class="btn-close" id="close-m-marca">✕</button></div>
+    <div class="form-group"><label>Nombre de la marca</label><input type="text" id="inp-marca" placeholder="Ej: FAAC, CAME, BFT..."></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-save-marca">Guardar marca</button>
+      <button class="btn btn-ghost" id="btn-cancel-marca">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MODELO -->
+<div class="modal-backdrop" id="m-modelo">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="m-modelo-titulo">Nuevo modelo</h3><button class="btn-close" id="close-m-modelo">✕</button></div>
+    <div class="form-group"><label>Nombre del modelo</label><input type="text" id="inp-modelo" placeholder="Ej: B614, SW-200, Genius..."></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-save-modelo">Guardar modelo</button>
+      <button class="btn btn-ghost" id="btn-cancel-modelo">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AÑADIR MANUAL -->
+<div class="modal-backdrop" id="m-pdf">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="m-pdf-titulo">Añadir manual</h3><button class="btn-close" id="close-m-pdf">✕</button></div>
+    <div class="form-group"><label>Nombre del manual</label><input type="text" id="inp-pdf-nombre" placeholder="Ej: Manual instalación B614"></div>
+    <div class="form-group"><label>Enlace (OneDrive / SharePoint / web)</label><input type="text" id="inp-pdf-url" placeholder="Pega aquí el enlace"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-save-pdf">Guardar manual</button>
+      <button class="btn btn-ghost" id="btn-cancel-pdf">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR MANUAL -->
+<div class="modal-backdrop" id="m-editpdf">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="m-editpdf-titulo">Editar manual</h3><button class="btn-close" id="close-m-editpdf">✕</button></div>
+    <div class="form-group"><label>Nombre del manual</label><input type="text" id="inp-editpdf-nombre"></div>
+    <div class="form-group"><label>Enlace</label><input type="text" id="inp-editpdf-url"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-save-editpdf">Guardar cambios</button>
+      <button class="btn btn-ghost" id="btn-cancel-editpdf">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, push, remove, onValue }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const FB = {
+  apiKey:            "AIzaSyChMXx5ZcleAo5oqzPvo1K_Af_wgQkh-LQ",
+  authDomain:        "listify-16b5d.firebaseapp.com",
+  databaseURL:       "https://listify-16b5d-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "listify-16b5d",
+  storageBucket:     "listify-16b5d.appspot.com",
+  messagingSenderId: "238610923350",
+  appId:             "1:238610923350:web:cd5c2c3fb23b5c0afba0f7"
+};
+const fbApp = initializeApp(FB, 'nexpert');
+const db    = getDatabase(fbApp);
+
+// ── ESTADO ────────────────────────────────────────────────────
+let currentCat       = null;
+let currentBrandKey  = null;
+let editMarcaKey     = null;
+let editModeloKey    = null;
+let editPdfModeloKey = null;
+let editPdfKey       = null;
+let currentModeloKey = null;
+let pdfGlobalTexto   = '';
+let aiChatHistory    = [];
+let isRecording      = false;
+let recognition      = null;
+let catData          = { puertas: {}, automatismos: {} };
+
+// ── REFS ──────────────────────────────────────────────────────
+const R = {
+  cat:      c           => ref(db, `nexpert/categorias/${c}`),
+  marcas:   c           => ref(db, `nexpert/categorias/${c}/marcas`),
+  marca:    (c,k)       => ref(db, `nexpert/categorias/${c}/marcas/${k}`),
+  marcaNombre:(c,k)     => ref(db, `nexpert/categorias/${c}/marcas/${k}/nombre`),
+  modelos:  (c,mk)      => ref(db, `nexpert/categorias/${c}/marcas/${mk}/modelos`),
+  modelo:   (c,mk,k)    => ref(db, `nexpert/categorias/${c}/marcas/${mk}/modelos/${k}`),
+  modeloNombre:(c,mk,k) => ref(db, `nexpert/categorias/${c}/marcas/${mk}/modelos/${k}/nombre`),
+  pdfs:     (c,mk,moK)  => ref(db, `nexpert/categorias/${c}/marcas/${mk}/modelos/${moK}/pdfs`),
+  pdf:      (c,mk,moK,pk)=>ref(db, `nexpert/categorias/${c}/marcas/${mk}/modelos/${moK}/pdfs/${pk}`),
+  pdfGlobal:()          => ref(db, 'nexpert/pdf_global')
+};
+
+// ── UTILS ─────────────────────────────────────────────────────
+let _toastT;
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => t.classList.remove('show'), 2800);
+}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+function setBreadcrumb(items) {
+  const bc = document.getElementById('bc');
+  if (!items.length) { bc.innerHTML = ''; return; }
+  bc.innerHTML = items.map((item,i) => {
+    const isLast = i === items.length-1;
+    return `<span class="bc-item${isLast?' active':''}" data-idx="${i}">${item.label}</span>${isLast?'':'<span class="bc-sep">›</span>'}`;
+  }).join('');
+  bc.querySelectorAll('.bc-item').forEach(el =>
+    el.addEventListener('click', () => items[parseInt(el.dataset.idx)].action()));
+}
+
+// ── NAVEGACIÓN ────────────────────────────────────────────────
+function goHome() {
+  currentCat = null; currentBrandKey = null;
+  setBreadcrumb([]);
+  showScreen('s-home');
+}
+function goCategory(cat) {
+  currentCat = cat; currentBrandKey = null;
+  const label = cat === 'puertas' ? 'Puertas Automáticas' : 'Automatismos';
+  document.getElementById('cat-title').textContent = label;
+  setBreadcrumb([{ label, action: () => goCategory(cat) }]);
+  renderMarcas();
+  showScreen('s-marcas');
+}
+function goBrand(brandKey) {
+  currentBrandKey = brandKey;
+  const brand = catData[currentCat]?.marcas?.[brandKey];
+  if (!brand) return;
+  const catLabel = currentCat === 'puertas' ? 'Puertas Automáticas' : 'Automatismos';
+  document.getElementById('brand-title').textContent = brand.nombre;
+  setBreadcrumb([
+    { label: catLabel, action: () => goCategory(currentCat) },
+    { label: brand.nombre, action: () => goBrand(brandKey) }
+  ]);
+  renderModelos();
+  showScreen('s-modelos');
+}
+
+// ── FIREBASE REAL-TIME ────────────────────────────────────────
+function suscribir() {
+  ['puertas','automatismos'].forEach(cat => {
+    onValue(R.cat(cat), snap => {
+      catData[cat] = snap.val() || {};
+      if (currentCat === cat) {
+        if (document.getElementById('s-marcas').classList.contains('active'))  renderMarcas();
+        if (document.getElementById('s-modelos').classList.contains('active')) renderModelos();
+      }
+    });
+  });
+  onValue(R.pdfGlobal(), snap => {
+    if (snap.exists()) {
+      const d = snap.val();
+      pdfGlobalTexto = d.texto || '';
+    } else {
+      pdfGlobalTexto = '';
+    }
+  });
+}
+
+// ── RENDER MARCAS ─────────────────────────────────────────────
+let selectedBrandKey = null;
+
+function renderMarcas() {
+  const filter = document.getElementById('searchMarca').value.toLowerCase();
+  const grid   = document.getElementById('brandsGrid');
+  const marcas = catData[currentCat]?.marcas || {};
+  const items  = Object.entries(marcas)
+    .filter(([,m]) => !filter || m.nombre.toLowerCase().includes(filter))
+    .sort(([,a],[,b]) => a.nombre.localeCompare(b.nombre));
+  document.getElementById('cat-sub').textContent = Object.keys(marcas).length + ' marca(s) registrada(s)';
+  grid.innerHTML = '';
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="empty-icon">🏭</span><h3>${filter?'Sin resultados':'No hay marcas aún'}</h3></div>`;
+    return;
+  }
+  items.forEach(([key,m]) => {
+    const card = document.createElement('div');
+    card.className = 'brand-card' + (key === selectedBrandKey ? ' selected' : '');
+    card.dataset.key = key;
+    card.innerHTML = `
+      <div class="brand-name">${m.nombre}</div>
+      <div class="brand-options">
+        <button class="brand-opt-btn brand-opt-enter">▶ Ver modelos</button>
+        <button class="brand-opt-btn brand-opt-edit">✏️ Editar</button>
+        <button class="brand-opt-btn brand-opt-delete">🗑️ Eliminar</button>
+      </div>`;
+
+    // Primer toque → seleccionar (mostrar opciones). Segundo toque en la misma → deseleccionar.
+    card.addEventListener('click', e => {
+      if (e.target.closest('.brand-options')) return; // lo gestiona el botón
+      if (selectedBrandKey === key) {
+        selectedBrandKey = null;
+        card.classList.remove('selected');
+      } else {
+        selectedBrandKey = key;
+        grid.querySelectorAll('.brand-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+      }
+    });
+
+    card.querySelector('.brand-opt-enter').addEventListener('click', e => { e.stopPropagation(); selectedBrandKey = null; goBrand(key); });
+    card.querySelector('.brand-opt-edit').addEventListener('click',  e => { e.stopPropagation(); openEditMarca(key, m.nombre); });
+    card.querySelector('.brand-opt-delete').addEventListener('click',e => { e.stopPropagation(); selectedBrandKey = null; deleteMarca(key, m.nombre); });
+
+    grid.appendChild(card);
+  });
+}
+
+// ── RENDER MODELOS ────────────────────────────────────────────
+function renderModelos() {
+  const list    = document.getElementById('modelsList');
+  const brand   = catData[currentCat]?.marcas?.[currentBrandKey];
+  if (!brand) return;
+  const modelos = brand.modelos || {};
+  document.getElementById('brand-sub').textContent = Object.keys(modelos).length + ' modelo(s) registrado(s)';
+  list.innerHTML = '';
+  if (!Object.keys(modelos).length) {
+    list.innerHTML = '<div class="empty"><span class="empty-icon">📋</span><h3>No hay modelos aún</h3></div>';
+    return;
+  }
+  Object.entries(modelos).sort(([,a],[,b]) => a.nombre.localeCompare(b.nombre))
+    .forEach(([moKey,mo]) => {
+      const pdfs  = mo.pdfs || {};
+      const nPdfs = Object.keys(pdfs).length;
+      const row   = document.createElement('div');
+      row.className = 'model-row'; row.id = 'model-' + moKey;
+      row.innerHTML = `
+        <div class="model-hdr">
+          <div class="model-hdr-left">
+            <span class="model-chevron">▶</span>
+            <span class="model-name">${mo.nombre}</span>
+            <span class="pdf-badge">${nPdfs} manual(es)</span>
+          </div>
+          <div class="model-acts">
+            <button class="btn btn-ghost">✏️</button>
+            <button class="btn btn-danger">🗑️</button>
+          </div>
+        </div>
+        <div class="model-body">
+          <div class="pdf-list" id="pdflist-${moKey}"></div>
+          <button class="add-pdf-btn">＋ Añadir manual</button>
+        </div>`;
+      row.querySelector('.model-hdr').addEventListener('click', () => row.classList.toggle('open'));
+      const acts = row.querySelector('.model-acts');
+      acts.addEventListener('click', e => e.stopPropagation());
+      acts.querySelector('.btn-ghost').addEventListener('click',  () => openEditModelo(moKey, mo.nombre));
+      acts.querySelector('.btn-danger').addEventListener('click', () => deleteModelo(moKey, mo.nombre));
+      row.querySelector('.add-pdf-btn').addEventListener('click', e => { e.stopPropagation(); openModalPDF(moKey, mo.nombre); });
+      list.appendChild(row);
+      renderPDFList(moKey, pdfs);
+    });
+}
+
+function renderPDFList(moKey, pdfs) {
+  const list = document.getElementById('pdflist-' + moKey);
+  if (!list) return;
+  list.innerHTML = '';
+  Object.entries(pdfs||{}).forEach(([pKey,pdf]) => {
+    const item = document.createElement('div');
+    item.className = 'pdf-item';
+    item.innerHTML = `<span class="pdf-icon">📄</span>
+      <span class="pdf-name">${pdf.nombre}</span>
+      ${pdf.url ? '<span style="font-size:0.65rem;color:var(--orange);margin-right:0.4rem">🔗</span>' : ''}
+      <div class="pdf-acts">
+        <button class="btn btn-ghost" title="Abrir">👁️</button>
+        <button class="btn btn-ghost" title="Editar">✏️</button>
+        <button class="btn btn-danger" title="Eliminar">🗑️</button>
+      </div>`;
+    item.querySelector('.pdf-name').addEventListener('click', () => { if(pdf.url) window.open(pdf.url,'_blank'); });
+    const btns = item.querySelectorAll('button');
+    btns[0].addEventListener('click', () => { if(pdf.url) window.open(pdf.url,'_blank'); else showToast('⚠ Sin enlace','err'); });
+    btns[1].addEventListener('click', () => openEditPDF(moKey, pKey, pdf));
+    btns[2].addEventListener('click', () => deletePDF(moKey, pKey, pdf.nombre));
+    list.appendChild(item);
+  });
+}
+
+// ── CRUD MARCAS ───────────────────────────────────────────────
+function openModalMarca() {
+  editMarcaKey = null;
+  document.getElementById('m-marca-titulo').textContent = 'Nueva marca';
+  document.getElementById('inp-marca').value = '';
+  openModal('m-marca');
+  setTimeout(() => document.getElementById('inp-marca').focus(), 150);
+}
+function openEditMarca(key, nombre) {
+  editMarcaKey = key;
+  document.getElementById('m-marca-titulo').textContent = 'Editar marca';
+  document.getElementById('inp-marca').value = nombre;
+  openModal('m-marca');
+  setTimeout(() => document.getElementById('inp-marca').focus(), 150);
+}
+async function saveMarca() {
+  const nombre = document.getElementById('inp-marca').value.trim().toUpperCase();
+  if (!nombre) return;
+  const marcas = catData[currentCat]?.marcas || {};
+  if (Object.entries(marcas).some(([k,m]) => m.nombre === nombre && k !== editMarcaKey)) {
+    showToast(`⚠ Ya existe "${nombre}"`, 'err'); return;
+  }
+  if (editMarcaKey) {
+    await set(R.marcaNombre(currentCat, editMarcaKey), nombre);
+    showToast('✓ Marca actualizada', 'ok');
+  } else {
+    await push(R.marcas(currentCat), { nombre, modelos: {} });
+    showToast('✓ Marca creada', 'ok');
+  }
+  closeModal('m-marca');
+}
+async function deleteMarca(key, nombre) {
+  if (!confirm(`¿Eliminar la marca "${nombre}"?`)) return;
+  await remove(R.marca(currentCat, key));
+  showToast('🗑 Marca eliminada', 'ok');
+}
+
+// ── CRUD MODELOS ──────────────────────────────────────────────
+function openModalModelo() {
+  editModeloKey = null;
+  document.getElementById('m-modelo-titulo').textContent = 'Nuevo modelo';
+  document.getElementById('inp-modelo').value = '';
+  openModal('m-modelo');
+  setTimeout(() => document.getElementById('inp-modelo').focus(), 150);
+}
+function openEditModelo(key, nombre) {
+  editModeloKey = key;
+  document.getElementById('m-modelo-titulo').textContent = 'Editar modelo';
+  document.getElementById('inp-modelo').value = nombre;
+  openModal('m-modelo');
+  setTimeout(() => document.getElementById('inp-modelo').focus(), 150);
+}
+async function saveModelo() {
+  const nombre = document.getElementById('inp-modelo').value.trim().toUpperCase();
+  if (!nombre) return;
+  const modelos = catData[currentCat]?.marcas?.[currentBrandKey]?.modelos || {};
+  if (Object.entries(modelos).some(([k,m]) => m.nombre === nombre && k !== editModeloKey)) {
+    showToast(`⚠ Ya existe "${nombre}"`, 'err'); return;
+  }
+  if (editModeloKey) {
+    await set(R.modeloNombre(currentCat, currentBrandKey, editModeloKey), nombre);
+    showToast('✓ Modelo actualizado', 'ok');
+  } else {
+    await push(R.modelos(currentCat, currentBrandKey), { nombre, pdfs: {} });
+    showToast('✓ Modelo creado', 'ok');
+  }
+  closeModal('m-modelo');
+}
+async function deleteModelo(key, nombre) {
+  if (!confirm(`¿Eliminar el modelo "${nombre}"?`)) return;
+  await remove(R.modelo(currentCat, currentBrandKey, key));
+  showToast('🗑 Modelo eliminado', 'ok');
+}
+
+// ── CRUD PDFs ─────────────────────────────────────────────────
+function openModalPDF(moKey, moNombre) {
+  currentModeloKey = moKey;
+  document.getElementById('m-pdf-titulo').textContent = 'Añadir manual · ' + moNombre;
+  document.getElementById('inp-pdf-nombre').value = '';
+  document.getElementById('inp-pdf-url').value = '';
+  openModal('m-pdf');
+  setTimeout(() => document.getElementById('inp-pdf-nombre').focus(), 150);
+}
+async function savePDF() {
+  const nombre = document.getElementById('inp-pdf-nombre').value.trim();
+  const url    = document.getElementById('inp-pdf-url').value.trim();
+  if (!nombre) { showToast('⚠ Escribe un nombre', 'err'); return; }
+  await push(R.pdfs(currentCat, currentBrandKey, currentModeloKey), { nombre, url: url||'' });
+  closeModal('m-pdf');
+  showToast('✓ Manual añadido', 'ok');
+}
+function openEditPDF(moKey, pKey, pdf) {
+  editPdfModeloKey = moKey; editPdfKey = pKey;
+  document.getElementById('m-editpdf-titulo').textContent = 'Editar manual · ' + pdf.nombre;
+  document.getElementById('inp-editpdf-nombre').value = pdf.nombre || '';
+  document.getElementById('inp-editpdf-url').value    = pdf.url    || '';
+  openModal('m-editpdf');
+  setTimeout(() => document.getElementById('inp-editpdf-nombre').focus(), 150);
+}
+async function saveEditPDF() {
+  const nombre = document.getElementById('inp-editpdf-nombre').value.trim();
+  const url    = document.getElementById('inp-editpdf-url').value.trim();
+  if (!nombre) { showToast('⚠ Escribe un nombre', 'err'); return; }
+  await set(R.pdf(currentCat, currentBrandKey, editPdfModeloKey, editPdfKey), { nombre, url: url||'' });
+  closeModal('m-editpdf');
+  showToast('✓ Manual actualizado', 'ok');
+}
+async function deletePDF(moKey, pKey, nombre) {
+  if (!confirm(`¿Eliminar el manual "${nombre}"?`)) return;
+  await remove(R.pdf(currentCat, currentBrandKey, moKey, pKey));
+  showToast('🗑 Manual eliminado', 'ok');
+}
+
+// ── PDF GLOBAL ────────────────────────────────────────────────
+// Al pulsar la carta → mostrar botón de subir
+document.getElementById('pdf-ia-card').addEventListener('click', function(e) {
+  if (e.target.closest('#pdf-ia-upload-wrap')) return;
+  const wrap = document.getElementById('pdf-ia-upload-wrap');
+  wrap.classList.toggle('show');
+});
+
+document.getElementById('btn-subir-pdf-global').addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('inp-pdf-global').click();
+});
+async function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+async function extractPDFText(file) {
+  if (!window.pdfjsLib) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const ab  = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: ab }).promise;
+  let txt = '';
+  for (let i=1; i<=pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const ct   = await page.getTextContent();
+    txt += ct.items.map(it=>it.str).join(' ') + '\n';
+  }
+  return txt.trim();
+}
+
+
+document.getElementById('inp-pdf-global').addEventListener('change', async function() {
+  const file = this.files[0];
+  if (!file) return;
+  const prog = document.getElementById('pdf-global-progress');
+  const btn  = document.getElementById('btn-subir-pdf-global');
+  prog.style.display = 'block';
+  prog.innerHTML = '<span class="spinner"></span> Extrayendo texto...';
+  btn.disabled = true;
+  try {
+    const texto = await extractPDFText(file);
+    if (!texto || texto.length < 50) throw new Error('No se pudo extraer texto del PDF');
+    prog.innerHTML = '<span class="spinner"></span> Guardando...';
+    await set(R.pdfGlobal(), { nombre: file.name, texto, fecha: Date.now() });
+    showToast('✓ PDF IA actualizado (' + Math.round(texto.length/1000) + ' KB)', 'ok');
+  } catch(e) {
+    showToast('⚠ Error: ' + e.message, 'err');
+  }
+  prog.style.display = 'none';
+  btn.disabled = false;
+  this.value = '';
+  // Ocultar el botón de subir — vuelve a mostrar solo "MANUAL IA"
+  document.getElementById('pdf-ia-upload-wrap').classList.remove('show');
+});
+
+// ── CHAT IA ───────────────────────────────────────────────────
+function openAIChat() {
+  aiChatHistory = [];
+  document.getElementById('chat-model-name').textContent = 'Consulta IA';
+  document.getElementById('chat-docs-info').textContent  =
+    pdfGlobalTexto ? '📄 Manual IA global cargado' : '⚠ Sin manual IA — solo búsqueda en internet';
+  document.getElementById('chat-back-btn').onclick = () => goHome();
+  setBreadcrumb([{ label: 'Consulta IA', action: () => {} }]);
+  clearChatUI();
+  showScreen('s-chat');
+  setTimeout(() => document.getElementById('chatInput').focus(), 200);
+}
+
+function clearChatUI() {
+  document.getElementById('chatMessages').innerHTML =
+    `<div class="chat-empty" id="chat-empty">
+      <span style="font-size:2.5rem">🔧</span>
+      <p>Pregunta sobre cualquier marca y modelo.<br>
+      <em style="color:var(--orange);font-style:normal">Ej: "Error E5 en MANUSA VISIO125"</em><br>
+      <em style="color:var(--orange);font-style:normal">Ej: "¿Cómo hacer el setup del FAAC B614?"</em></p>
+    </div>`;
+}
+
+function appendMsg(role, text) {
+  document.getElementById('chat-empty')?.remove();
+  const msgs = document.getElementById('chatMessages');
+  const div  = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.innerHTML = `<span class="chat-sender">${role==='user'?'Tú':'◈ IA'}</span>
+    <div class="chat-bubble">${escHtml(text)}</div>`;
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+function appendTyping() {
+  document.getElementById('chat-empty')?.remove();
+  const msgs = document.getElementById('chatMessages');
+  const div  = document.createElement('div');
+  div.className = 'chat-msg assistant'; div.id = 'typing-indicator';
+  div.innerHTML = `<span class="chat-sender">◈ IA</span>
+    <div class="chat-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>`;
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+function removeTyping() { document.getElementById('typing-indicator')?.remove(); }
+
+const WORKER = 'https://crimson-grass-a676.ingenieros-sat.workers.dev';
+
+async function sendMessage(forceInternet) {
+  const input = document.getElementById('chatInput');
+  const btn   = document.getElementById('chatSendBtn');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = ''; input.style.height = 'auto';
+  btn.disabled = true; input.disabled = true;
+  appendMsg('user', text); appendTyping();
+
+  const hayPDF = pdfGlobalTexto && pdfGlobalTexto.length > 50;
+
+  const systemPrompt = `Eres un asistente técnico especializado en puertas automáticas peatonales y automatismos.
+
+${hayPDF && !forceInternet
+  ? `MANUAL TÉCNICO GLOBAL:
+El manual está organizado en capítulos numerados con título "NÚMERO MARCA MODELO".
+Ejemplo: "1 MANUSA VISIO125". Todo el contenido hasta el siguiente número corresponde a ese modelo.
+Cuando el usuario pregunte sobre un modelo, localiza el capítulo correspondiente y responde con su contenido.
+Si no encuentras el modelo, responde exactamente: [SIN_DATOS]
+
+CONTENIDO DEL MANUAL:
+${pdfGlobalTexto.substring(0, 80000)}`
+  : forceInternet
+    ? 'Busca en internet información técnica oficial sobre el producto.'
+    : 'No hay manual IA cargado. Usa tu conocimiento general sobre puertas automáticas.'}
+
+Responde siempre en español. Sé detallado y paso a paso en los procedimientos.`;
+
+  const messages = [...aiChatHistory, { role: 'user', content: text }];
+  const body = { model:'claude-sonnet-4-20250514', max_tokens:1000, system:systemPrompt, messages };
+  if (forceInternet) body.tools = [{ type:'web_search_20250305', name:'web_search' }];
+
+  try {
+    const resp = await fetch(WORKER, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const data = await resp.json();
+    removeTyping();
+    let reply = '';
+    if (data.content) data.content.forEach(c => { if (c.type==='text') reply += c.text; });
+
+    if (!forceInternet && reply.includes('[SIN_DATOS]')) {
+      appendSearchingMsg();
+      await buscarInternet(text, messages, btn, input);
+      return;
+    }
+
+    if (!reply) reply = 'No pude obtener respuesta. Inténtalo de nuevo.';
+    appendMsg('assistant', reply);
+    aiChatHistory.push({ role:'user', content:text });
+    aiChatHistory.push({ role:'assistant', content:reply });
+  } catch(err) {
+    removeTyping();
+    appendMsg('assistant', '⚠ Error de conexión: ' + err.message);
+  }
+  btn.disabled = false; input.disabled = false;
+  setTimeout(() => input.focus(), 100);
+}
+
+function appendSearchingMsg() {
+  document.getElementById('chat-empty')?.remove();
+  const msgs = document.getElementById('chatMessages');
+  const div  = document.createElement('div');
+  div.className = 'chat-msg assistant'; div.id = 'searching-indicator';
+  div.innerHTML = `<span class="chat-sender">◈ IA</span>
+    <div class="chat-bubble" style="color:var(--orange);display:flex;align-items:center;gap:0.5rem">
+      <span>🌐</span><span>Buscando en internet...</span>
+      <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+    </div>`;
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function buscarInternet(originalText, prevMessages, btn, input) {
+  try {
+    const resp = await fetch(WORKER, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1000,
+        system:'Eres un asistente técnico especializado en puertas automáticas y automatismos. Busca información técnica oficial. Responde en español.',
+        tools:[{ type:'web_search_20250305', name:'web_search' }],
+        messages: prevMessages
+      })
+    });
+    const data = await resp.json();
+    document.getElementById('searching-indicator')?.remove();
+    let reply = '';
+    if (data.content) data.content.forEach(c => { if (c.type==='text') reply += c.text; });
+    if (!reply) reply = 'No encontré información en internet. Intenta reformular la pregunta.';
+    appendMsg('assistant', reply);
+    aiChatHistory.push({ role:'user', content:originalText });
+    aiChatHistory.push({ role:'assistant', content:reply });
+  } catch(err) {
+    document.getElementById('searching-indicator')?.remove();
+    appendMsg('assistant', '⚠ Error buscando en internet: ' + err.message);
+  }
+  btn.disabled = false; input.disabled = false;
+  setTimeout(() => input.focus(), 100);
+}
+
+// ── VOZ ───────────────────────────────────────────────────────
+function toggleVoice() {
+  if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) {
+    showToast('⚠ Tu navegador no soporta voz. Usa Chrome.', 'err'); return;
+  }
+  if (isRecording) { if (recognition) recognition.stop(); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'es-ES'; recognition.continuous = false; recognition.interimResults = true;
+  recognition.onstart = () => {
+    isRecording = true;
+    const btn = document.getElementById('chatMicBtn');
+    btn.classList.add('recording'); btn.textContent = '🔴';
+    document.getElementById('chatInput').placeholder = 'Escuchando...';
+  };
+  recognition.onresult = e => {
+    let t = '';
+    for (let i=e.resultIndex; i<e.results.length; i++) t += e.results[i][0].transcript;
+    const inp = document.getElementById('chatInput');
+    inp.value = t; inp.style.height = 'auto';
+    inp.style.height = Math.min(inp.scrollHeight, 120) + 'px';
+  };
+  recognition.onend = () => {
+    isRecording = false;
+    const btn = document.getElementById('chatMicBtn');
+    btn.classList.remove('recording'); btn.textContent = '🎤';
+    document.getElementById('chatInput').placeholder = 'Ej: ¿Qué significa el error E05 en FAAC B614?';
+    const text = document.getElementById('chatInput').value.trim();
+    if (text) sendMessage();
+  };
+  recognition.onerror = e => {
+    isRecording = false;
+    const btn = document.getElementById('chatMicBtn');
+    btn.classList.remove('recording'); btn.textContent = '🎤';
+    if (e.error==='not-allowed') showToast('⚠ Permiso de micrófono denegado','err');
+    else if (e.error!=='no-speech') showToast('⚠ Error de voz: '+e.error,'err');
+  };
+  recognition.start();
+}
+
+// ── EVENTOS ───────────────────────────────────────────────────
+document.getElementById('logo-btn').addEventListener('click', goHome);
+document.getElementById('btn-inicio').addEventListener('click', goHome);
+document.getElementById('btn-ia-header').addEventListener('click', openAIChat);
+document.getElementById('cat-puertas').addEventListener('click', () => goCategory('puertas'));
+document.getElementById('cat-automatismos').addEventListener('click', () => goCategory('automatismos'));
+document.getElementById('back-marcas').addEventListener('click', goHome);
+document.getElementById('back-modelos').addEventListener('click', () => goCategory(currentCat));
+document.getElementById('searchMarca').addEventListener('input', renderMarcas);
+
+document.getElementById('btn-add-marca').addEventListener('click', openModalMarca);
+document.getElementById('btn-save-marca').addEventListener('click', saveMarca);
+document.getElementById('btn-cancel-marca').addEventListener('click', () => closeModal('m-marca'));
+document.getElementById('close-m-marca').addEventListener('click', () => closeModal('m-marca'));
+document.getElementById('inp-marca').addEventListener('keydown', e => { if(e.key==='Enter') saveMarca(); });
+
+document.getElementById('btn-add-modelo').addEventListener('click', openModalModelo);
+document.getElementById('btn-save-modelo').addEventListener('click', saveModelo);
+document.getElementById('btn-cancel-modelo').addEventListener('click', () => closeModal('m-modelo'));
+document.getElementById('close-m-modelo').addEventListener('click', () => closeModal('m-modelo'));
+document.getElementById('inp-modelo').addEventListener('keydown', e => { if(e.key==='Enter') saveModelo(); });
+
+document.getElementById('btn-save-pdf').addEventListener('click', savePDF);
+document.getElementById('btn-cancel-pdf').addEventListener('click', () => closeModal('m-pdf'));
+document.getElementById('close-m-pdf').addEventListener('click', () => closeModal('m-pdf'));
+document.getElementById('inp-pdf-nombre').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('inp-pdf-url').focus(); });
+
+document.getElementById('btn-save-editpdf').addEventListener('click', saveEditPDF);
+document.getElementById('btn-cancel-editpdf').addEventListener('click', () => closeModal('m-editpdf'));
+document.getElementById('close-m-editpdf').addEventListener('click', () => closeModal('m-editpdf'));
+
+document.getElementById('chatSendBtn').addEventListener('click', () => sendMessage());
+document.getElementById('chatMicBtn').addEventListener('click', toggleVoice);
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+document.getElementById('chatInput').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// ── ARRANQUE ──────────────────────────────────────────────────
+suscribir();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js")
+      .then(r => console.log("SW:", r.scope))
+      .catch(e => console.log("SW error:", e));
+  });
+}
+</script>
+</body>
+</html>
